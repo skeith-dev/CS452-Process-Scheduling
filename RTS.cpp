@@ -3,3 +3,5 @@
 //
 
 #include "RTS.h"
+
+RTS::RTS() = default;

@@ -3,3 +3,5 @@
 //
 
 #include "MFQS.h"
+
+MFQS::MFQS() = default;

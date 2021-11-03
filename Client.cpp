@@ -7,8 +7,8 @@
 
 int main() {
 
-    MFQS mfqs = new MFQS;
-    RTS rts = new RTS;
+    MFQS *mfqs = new MFQS;
+    RTS *rts = new RTS;
 
     return 0;
 

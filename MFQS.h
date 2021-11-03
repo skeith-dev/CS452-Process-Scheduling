@@ -7,6 +7,8 @@
 
 
 class MFQS {
+public:
+    MFQS();
 
 };
 

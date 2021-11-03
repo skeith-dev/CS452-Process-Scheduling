@@ -7,6 +7,8 @@
 
 
 class RTS {
+public:
+    RTS();
 
 };
 
