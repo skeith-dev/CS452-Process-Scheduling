@@ -1,0 +1,62 @@
+
+	
+
+	Probably two distinct phases for input preparation and main program execution. One idea for preparation phase structure:
+		
+		while there are input lines left{
+			if a line contains an invalid value{
+				discard this line;
+			else
+				create a Process object for this input line;
+			}
+		}
+		sort the resulting list of Process objects by their arrival time values.
+		
+		
+User prompts:
+	Get input from file or user
+	Time quantum
+	I/O point in time quantum
+	Queue number (MFQS)		
+		
+		
+		
+		
+=====[ MFQS ]=====
+		
+Need a mechanism for determining/storing turnaround and wait times of individual processes. 
+	It may be enough to store the time at which the process was placed in the first ready queue. If total turnaround time is only time spent waiting plus time spent executing, and a 
+process is always waiting or executing, then the turnaround time is the time of completion minus the time it was queued. Burst is already given, so wait time is recoverable by subtracting
+the burst from the turnaround time. 
+	
+	
+	
+		
+Need special list for processes preempted due to I/O
+
+
+
+
+
+Checks/actions to be performed between time quanta:
+	If there is a process in the list prepared during the input phase whose arrival time is less than or equal to the current clock value, 
+move it to the highest-level ready queue. 
+
+	If there are processes in the lowest priority queue, increment the age of each.
+		If the program is to select a process from the lowest-priority queue for execution, the age check should exclude this process. 
+	If the age of a process is greater than or equal to the user-specified value, place that process at the next-higher queue and reset their age to zero.
+	
+	If there are processes in the auxiliary queue, update their age.
+	If the age of a process exceeds the I/O value, place that process at the next-lower queue (from which it was last taken) and reset its age to zero.
+	
+	
+Checks/actions to be performed at every cycle:
+	
+	Decrement the burst value of the currently executing process (or adjust some other progress counter). 
+
+
+
+	
+=====[ Real-Time ]=====
+
+
