@@ -1,8 +1,8 @@
 
-Lab2: Client.o MFQS.o RTS.o
+Lab2: Client.o MFQS.o RTS.o Process.o
 	g++ -o Lab2 Client.o MFQS.o RTS.o Process.o
 	
-Client.o: Client.cpp MFQS.h RTS.h
+Client.o: Client.cpp Client.h MFQS.h RTS.h
 	g++ -c Client.cpp 
 
 MFQS.o: MFQS.cpp MFQS.h

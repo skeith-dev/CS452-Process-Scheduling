@@ -2,6 +2,14 @@
 #ifndef LAB2_PROCESS_H
 #define LAB2_PROCESS_H
 
+#include<algorithm>
+#include<vector>
+
+#define SORT_ARRIVAL_TIME 0
+#define SORT_IO_WAIT 1
+#define SORT_DEADLINE 2
+
+using namespace std;
 
 class Process{
 public:
@@ -16,9 +24,23 @@ public:
 	int IO;		// Time needed for I/O, in clock cycles.
 	int Age;	// Age of the process in clock cycles; used when measuring time spent waiting.
 	int QLevel;	// Specifies which queue a process is in.
+	int Sort_Type;
 	
 	Process();
+	Process( int p );
+	
+	bool operator < ( Process &other );
+	
+	
+	
 	
 };
+
+	int insert_sorted( vector<Process*> *proc_vect, Process *proc, int flag );
+	//int insert_unsorted( vector<Process*> *proc_vect, Process *proc );
+	
+	
+	
+	
 
 #endif

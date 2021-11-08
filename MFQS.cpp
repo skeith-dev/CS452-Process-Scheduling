@@ -1,8 +1,17 @@
 //
 // Created by Spencer Keith on 11/3/21.
 //--
+//Need to handle potential failure of 'new' calls.
+
+#include <iostream>
+#include <stdio.h>
+#include<vector>
+#include<algorithm>
+
 
 #include "MFQS.h"
+
+using namespace std;
 
 //MFQS::MFQS() = default;
 
@@ -12,17 +21,64 @@
 
 //q_arr[q_count] = queue for I/O-suspended processes
 
-
-MFQS::MFQS(int q, int t, Process *p){
+//MFQS::MFQS(int q, int t, Process *p){
+MFQS::MFQS(int q, int t, vector<Process*> *n){
 
 	clock = 0;
 	
 	q_count = q;
 	time_quantum = t;
-	next_arrival = p;
+	vect_new_procs = n;
 	
-	Process *array[q_count+1];
-	q_arr = array;
+	//next_arrival = p;
+	
+	//Process *array[q_count+1];
+	//q_arr = array;
+	
+	//vector<Process> *qv_arr[q_count+1];
+	
+	qv_arr = new vector<Process*>*[q_count+1];
+	
+	for( int i = 0; i <= q_count; i++ ){
+	
+		qv_arr[i] = new vector<Process*>();
+		qv_arr[i]->reserve( vect_new_procs->capacity() );
+		
+	}
+	
+	// Begin Test
+	
+	cout << "- vect_new_procs 1-3: " << endl;
+
+	Process *p1 = vect_new_procs->front();
+	cout << "	" << p1->P_ID << endl;
+	pop_heap( vect_new_procs->begin(), vect_new_procs->end() );
+	vect_new_procs->pop_back();
+	
+	Process *p2 = vect_new_procs->front();
+	cout << "	" << p2->P_ID << endl;
+	pop_heap( vect_new_procs->begin(), vect_new_procs->end() );
+	vect_new_procs->pop_back();
+	
+	Process *p3 = vect_new_procs->front();
+	cout << "	" << p3->P_ID << endl;
+	pop_heap( vect_new_procs->begin(), vect_new_procs->end() );
+	vect_new_procs->pop_back();
+	
+	qv_arr[0]->push_back( p3 );
+	push_heap( qv_arr[0]->begin(), qv_arr[0]->end() );
+	
+	qv_arr[0]->push_back( p2 );
+	push_heap( qv_arr[0]->begin(), qv_arr[0]->end() );
+	
+	qv_arr[0]->push_back( p1 );
+	push_heap( qv_arr[0]->begin(), qv_arr[0]->end() );
+	
+	cout << "qv_arr[0]: " << qv_arr[0]->front()->P_ID << endl;
+	
+	
+	//End Test
+	
 	
 	
 	
@@ -42,8 +98,8 @@ void cycle(){
 	/*
 	
 	// Sets the time for the next step in the simulation to be either I/O initiation, process completion, or the full amount of the time quantum.
-	// Need to exclude IO from this calculation when it is 0, or 0 will always be returned. Either that, or use an if/else.
-	step = minimum( current_process->IO, current_process->Burst, time_quantum * (2^queue level) );
+	// IO should be excluded from this calculation if the user has indicated that no IO should be performed, or the process's IO parameter is 0.
+	step = minimum( time quantum IO point, current_process->Burst, time_quantum * (2^queue level) );
 	
 	clock += step;
 	current_process->Burst -= step;
@@ -105,3 +161,27 @@ void cycle(){
 	
 	
 }
+
+
+/*
+
+queues : sort
+-----------------
+new arrivals: arrival time
+
+ready queues: priority(?)
+
+I/O: I/O time
+
+Assumptions:
+	Processes in the lowest-level ready queue will be naturally sorted by age. That is, if the first process in the queue is P_n, the second is P_n-1, and so on, then
+P_n will have an age greater than or equal to P_n-1, P_n-1 will have an age greater than or equal to P_n-2, and so on.
+	Processes may be inserted into positions that are not at the front or end of the relevant queue or list, but will only ever be removed from the front.
+
+
+
+
+
+*/
+
+
