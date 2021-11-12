@@ -12,6 +12,9 @@ on the final size of the Process class, this may not be prohibitive, but also no
 
 
 
+
+
+
 	Probably two distinct phases for input preparation and main program execution. One idea for preparation phase structure:
 		
 		while there are input lines left{

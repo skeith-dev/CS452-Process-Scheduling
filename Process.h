@@ -4,9 +4,10 @@
 
 #include<algorithm>
 #include<vector>
+#include<iostream>
 
-#define SORT_ARRIVAL_TIME 0
-#define SORT_IO_WAIT 1
+#define SORT_ARRIVAL_TIME 0 
+#define SORT_IO_WAIT 1 
 #define SORT_DEADLINE 2
 
 using namespace std;
@@ -39,6 +40,7 @@ public:
 	int insert_sorted( vector<Process*> *proc_vect, Process *proc, int flag );
 	//int insert_unsorted( vector<Process*> *proc_vect, Process *proc );
 	
+	bool comp_proc( Process *proc_1, Process *proc2 );
 	
 	
 	

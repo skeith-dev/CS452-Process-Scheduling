@@ -6,7 +6,18 @@ using namespace std;
 
 int main(){
 	
-	test_arr_asn();
+	object obj_1( 1 );
+	obj_1.val2 = 1;
+	
+	object obj_2( 1 );
+	obj_2.val2 = 2;
+	
+	if( obj_1 < obj_2 ){
+		cout << "True" << endl;
+	}else{
+		cout << "False" << endl;
+	}
+	
 	
 	
 	/*
@@ -18,6 +29,7 @@ int main(){
 
 	return 0;
 }
+
 
 /**/
 int test_arr_asn(){
