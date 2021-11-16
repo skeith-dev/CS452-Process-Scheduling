@@ -49,3 +49,19 @@ public:
 	
 
 #endif
+
+/*
+Outline of information retained by the Process class:
+	The Burst, Arrival, and IO fields are filled in when the Process object in constructed and never altered, so 
+these direcly reflect the corresponding fields in the input provided by the user.
+
+	The IO_Done field is given its final value when the process is placed in the I/O-Wait queue. This final value is
+the time that the process completed its I/O, so the time that I/O was initiated can be obtaiend by subtracting the IO value 
+from the IO_Done value.
+	
+	Completion time can be gathered before the object is destroyed by checking the current clock value. Total turnaround 
+time, then, is obtained with subtracting the Arrival value from the completion time, and total time spent waiting is obtained
+by subtracting the Burst value from the turnaround time.
+
+
+*/
