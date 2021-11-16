@@ -93,6 +93,7 @@ int main() {
 	int age_point;
 	int readmode;
 	
+	vector<Process*> *vect_new_procs;
 
 	while( get_input ){
 
@@ -252,12 +253,7 @@ int main() {
 				cout << endl;
 				print_menu = true;
 				next_input = NEXT_INPUT_READMODE;
-				
-				
-				/*
-				next_input = 0;
-				get_input = false; 
-				*/
+
 			}
 		}
 
@@ -281,10 +277,9 @@ int main() {
 				return 0;
 			}
 			
-			vector<Process*> *vect_new_procs;
+			//vector<Process*> *vect_new_procs;
 			if( readmode == 1 ){
-				vect_new_procs = read_proc_file();
-				
+				vect_new_procs = read_proc_file( (IO_point != 0) );
 				if( vect_new_procs == nullptr ){
 					print_menu = true;
 					continue;
@@ -297,33 +292,26 @@ int main() {
 		
 			next_input = 0;
 			get_input = false; 
+			
+			// Debug return 0; 
 		}
 	
 		
 
 	}
 
-	//Begin Debug
-	
-	/*
-	cout << "Data collected:" << endl;
-	cout << "  sch_alg : " << sch_alg << endl;
+	// Build and execute the simulation.
 	if( sch_alg == 1 ){
-		cout << "  queue_count : " << queue_count << endl;
-		cout << "  age_point : " << age_point << endl;
+		MFQS mfqs( queue_count, time_quantum, IO_point, age_point, vect_new_procs );
+		mfqs.start();
 	}
-	cout << "  time_quantum : " << time_quantum << endl;
-	cout << "  IO_point : " << IO_point << endl;
-	*/
 	
-	//End Debug
-
 
     return 0;
  
 }
 
-vector<Process*>* read_proc_file(){
+vector<Process*>* read_proc_file( bool do_io ){
 	bool need_file = true;
 	int proc_info_arr[PROCESS_PARAM_COUNT];
 	size_t pos_begin;
@@ -371,21 +359,23 @@ vector<Process*>* read_proc_file(){
 				}
 				
 				proc_info_arr[5] = stoi( proc_info.substr( pos_begin ) );
-				
-				// Additional validation (if needed; check with Tan)
-				//...
-				
-				// Construct Process objects.
 
+				// Construct Process objects.
 				Process *proc = new Process( proc_info_arr[0] );
 				proc->Burst = proc_info_arr[1];
 				proc->Arrival = proc_info_arr[2];
 				proc->Priority = proc_info_arr[3];
 				proc->Deadline = proc_info_arr[4];
 				proc->IO = proc_info_arr[5];
+				if( proc->IO == 0 || !do_io ){
+					proc->IO_Done = -1;
+				}else{
+					proc->IO_Done = 0;
+				}
+				
+				
 				
 				insert_sorted( vect_new_procs, proc, SORT_ARRIVAL_TIME );
-
 			}
 			
 			// If reading stopped because of an error...
@@ -406,13 +396,14 @@ vector<Process*>* read_proc_file(){
 
 	
 	//Begin Debug
-	
+	/*	
 	Process *p;
 	int s = vect_new_procs->size();
 	for( int i = 0; i < s; i++ ){
 		
 		p = vect_new_procs->front();
-		
+		pop_heap( vect_new_procs->begin(), vect_new_procs->end(), comp_proc );
+		vect_new_procs->pop_back();
 		
 		cout << "Process " << i << ":" << endl;
 		cout << "  P_ID: " << p->P_ID << endl;
@@ -421,11 +412,11 @@ vector<Process*>* read_proc_file(){
 		cout << "  Priority: " << p->Priority << endl;
 		cout << "  Deadline: " << p->Deadline << endl;
 		cout << "  IO: " << p->IO << endl;
-		
-		pop_heap( vect_new_procs->begin(), vect_new_procs->end(), comp_proc );
-		vect_new_procs->pop_back();
+
+	}*/
 	
-	}
+	
+	cout << "Input parsed." << endl;
 	
 	//End Debug
 	

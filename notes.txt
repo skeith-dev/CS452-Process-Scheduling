@@ -11,6 +11,9 @@
 on the final size of the Process class, this may not be prohibitive, but also not necessarily great. 
 
 
+(11/14)
+- The I/O-Wait queue is sorted on Process.IO, then Process.Priority, with lesser values in front.
+- The primary ready queues are sorted on Process.Arrival, then Process.Priority, with lesser values in front.
 
 
 

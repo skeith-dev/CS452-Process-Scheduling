@@ -5,40 +5,45 @@
 #ifndef LAB2_MFQS_H
 #define LAB2_MFQS_H
 
-#include<vector>
+#include <cmath>
+#include <vector>
+
 #include "Process.h"
 
 using namespace std;
+
+
 
 class MFQS {
 
 	int clock;	// Tracks the total number of cycles that have passed in the simulation.
 	int time_quantum;	// The time quantum used for process execution, in clock cycles.
+	int io_point;	// The point in the time quantum at which to perform I/O.
+	int age_point;	// The number of cycles a process spends in the lowest-priority queue before aging up.
+	int step;	// The number of cycles between the current simulation step and the next. 
 	int q_count;	// The number of process queues.
 	int **q_arr;	// A pointer to an array that stores the process queues. Its total size is equal to q_count+1. q_arr[q_count] stores processes suspended for I/O.
-	
-	Process *next_arrival;	// The next process to arrive.
+	int *tq_arr;	// A pointer to an array that stores the pre-calculated time quanta for each queue. 
+	int time_quantum_max;
+	string *os_arr;	// A point to an array of strings used for output.
+
 	Process *current_process;	// The process currently in the processor.
-	Process *q_move_list;	// A list of processes that need to be moved to a queue, either from its current queue or from the processor.
-	
-	
+
 	vector<Process*> *vect_new_procs;
 	vector<Process*> **qv_arr;
 	
-	
 
-	
 public:
     MFQS();
-	MFQS( int q, int t, vector<Process*> *n ); 
-	
+	MFQS( int qc, int tq, int iop, int ap, vector<Process*> *vnp );
 	
 	// Main method of the class.
+	int start();
+	
 	void cycle(); 
+	void cycle2();
 
 };
-
-
 
 
 #endif //LAB2_MFQS_H

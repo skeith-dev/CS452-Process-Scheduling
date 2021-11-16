@@ -44,7 +44,7 @@ public:
 int multi_feedback_queue();
 int real_time();
 
-vector<Process*>* read_proc_file();
+vector<Process*>* read_proc_file( bool do_io );
 vector<Process*>* read_proc_console();
 
 #endif
