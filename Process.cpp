@@ -1,5 +1,3 @@
-
-
 #include "Process.h"
 
 using namespace std;
@@ -16,7 +14,7 @@ bool Process::operator < ( Process &other ){
 }
 */
 
-bool Process::operator < ( Process &other ){
+bool Process::operator < ( Process &other ) const{
 	cout << "sort1" << endl;
 	
 

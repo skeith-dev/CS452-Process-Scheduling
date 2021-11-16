@@ -29,8 +29,7 @@ class MFQS {
 
 	
 public:
-    MFQS();
-	MFQS( int q, int t, vector<Process*> *n ); 
+	MFQS( int q, int t, vector<Process*> *n );
 	
 	
 	// Main method of the class.

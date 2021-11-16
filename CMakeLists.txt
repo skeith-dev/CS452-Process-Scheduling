@@ -10,4 +10,8 @@ add_executable(Lab2
         MFQS.cpp
         MFQS.h
         RTS.cpp
-        RTS.h)
+        RTS.h
+        Process.cpp
+        Process.h
+        test.cpp
+        test.h)

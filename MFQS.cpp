@@ -4,16 +4,12 @@
 //Need to handle potential failure of 'new' calls.
 
 #include <iostream>
-#include <stdio.h>
 #include<vector>
 #include<algorithm>
-
 
 #include "MFQS.h"
 
 using namespace std;
-
-//MFQS::MFQS() = default;
 
 //q = number of queues
 //t = time quantum, in loop cycles

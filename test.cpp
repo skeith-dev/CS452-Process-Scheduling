@@ -3,7 +3,7 @@
 using namespace std;
 
 
-
+/*
 int main(){
 	
 	object obj_1( 1 );
@@ -19,17 +19,15 @@ int main(){
 	}
 	
 	
-	
-	/*
-	object obj( 1 );
-	test_object_pass1( obj );
-	
-	cout << "val: " << obj.val << endl;
-	*/
 
-	return 0;
+	//object obj( 1 );
+	//test_object_pass1( obj );
+	
+	//cout << "val: " << obj.val << endl;
+
+	//return 0;
 }
-
+*/
 
 /**/
 int test_arr_asn(){

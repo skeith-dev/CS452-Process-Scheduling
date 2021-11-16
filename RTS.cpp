@@ -4,4 +4,9 @@
 
 #include "RTS.h"
 
-RTS::RTS() = default;
+
+RTS::RTS(int queues, int time_quantum, vector<Process*> *processes) {
+
+
+
+}
