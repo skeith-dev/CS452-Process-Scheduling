@@ -33,6 +33,16 @@ bool Process::operator < ( Process &other ){
 
 Process::Process( int p ){
 	P_ID = p;
+	Burst = 0;
+	Progress = 0;
+	Arrival = 0;
+	Priority = 0;
+	Deadline = 0;
+	IO = 0;
+	Age = 0;
+	QLevel = 0;
+	IO_Done = 0;
+	Sort_Type = 0;
 }
 
 

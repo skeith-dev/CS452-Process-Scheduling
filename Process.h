@@ -5,6 +5,7 @@
 #include<algorithm>
 #include<vector>
 #include<iostream>
+#include<string>
 
 #define SORT_ARRIVAL_TIME 0 
 #define SORT_IO_WAIT 1 
@@ -28,6 +29,8 @@ public:
 	int QLevel;	// Specifies which queue a process is in.
 	int IO_Done;	// Is initially 0 if the process has an I/O operation it has not performed, or -1 if it has no I/O. 
 	int Sort_Type;
+	
+	//string P_ID_str;
 	
 	Process();
 	Process( int p );

@@ -372,9 +372,7 @@ vector<Process*>* read_proc_file( bool do_io ){
 				}else{
 					proc->IO_Done = 0;
 				}
-				
-				
-				
+
 				insert_sorted( vect_new_procs, proc, SORT_ARRIVAL_TIME );
 			}
 			

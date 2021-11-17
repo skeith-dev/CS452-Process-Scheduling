@@ -57,8 +57,29 @@ MFQS::MFQS(int qc, int tq, int iop, int ap, vector<Process*> *vnp){
 // Set up the simulation and call the primary method.
 int MFQS::start(){
 	cout << "Starting simulation. " << endl;
+	
 	current_process = vect_new_procs->front();
-	pop_heap( vect_new_procs->begin(), vect_new_procs->end(), comp_proc );
+	clock = current_process->Arrival;
+	
+	pop_heap( vect_new_procs->begin(), vect_new_procs->end(), comp_proc_arrival );
+	vect_new_procs->pop_back();
+	
+	cout << "C" << to_string( clock ) << ": Process " << to_string(current_process->P_ID) << " has been submitted. \n";
+	
+	Process *temp;
+	while( vect_new_procs->front()->Arrival == current_process->Arrival ){
+		temp = vect_new_procs->front();
+		pop_heap( vect_new_procs->begin(), vect_new_procs->end(), comp_proc_arrival );
+		vect_new_procs->pop_back();
+		
+		qv_arr[0]->push_back( temp );
+		cout << "C" << to_string( clock ) << ": Process " << to_string(temp->P_ID) << " has been submitted. \n";
+	}
+	
+	cycle2();
+	
+	/*current_process = vect_new_procs->front();
+	pop_heap( vect_new_procs->begin(), vect_new_procs->end(), comp_proc_arrival );
 	vect_new_procs->pop_back();
 
 	current_process->Progress = 0;
@@ -66,11 +87,15 @@ int MFQS::start(){
 	current_process->QLevel = 0;
 	
 	clock = current_process->Arrival;
-	cout << "C" << to_string( clock ) << ": Process " << to_string( current_process->P_ID ) << " has been submitted." << endl;
+	cout << "C" << to_string( clock ) << ": Process " << to_string(current_process->P_ID) << " has been submitted. \n";
 	cycle2();
+	*/
 
 	return 0;
 }
+
+
+
 
 // The primary method of MFQS. Unlike the initial attempt, each clock cycle within the step is processed individually after the step is calculated. This avoids 
 //the need for space in which to retroactively generate and sort output and vastly improves memory efficiency (i.e. it can run now) at the cost of some runtime efficiency.
@@ -79,37 +104,42 @@ void MFQS::cycle2(){
 	int time_quant_by_queue; // The time quanta for a specific queue.
 	int q_ind;	// Used when finding the next available process in a ready queue.
 	int clock_step; // Used when iterating through the individual cycles of a step.
+	int procs_complete = 0;
 
 	Process *temp_proc; // A temporary Process pointer.
 	vector<Process*> *temp_queue; // A temporary vector<Process*> pointer.
 
-	//int loop_counter = 0;
+	int loop_counter = 0;
+	string input_str;
 	while( current_process != nullptr ){
-		/*
-		loop_counter++;
+		
+		/*loop_counter++;
 		if( loop_counter > 25 ){
+			cout << "Loop control exit." << endl;
 			return;
-		}
-		*/
+		}*/
+
+		cout << "C" << to_string( clock_step ) << ": Process " << to_string( current_process->P_ID ) << " has begun executing. \n" ;
 		
 		// Calculate the step time.
-		cout << "C" << to_string( clock_step ) << ": Process " << to_string( current_process->P_ID ) << " has begun executing." << endl;
-		
-		// If the process has IO it has not performed and the user-defined 
-		//time quantum I/O point is less than the process's Burst...
-		if( current_process->IO_Done == 0 && io_point < current_process->Burst ){
-			step = io_point;
+		// If the difference between the current process's progress and total burst is less than the time quantum, the step is set to that difference,
+		//minus one if the process has I/O to perform. Otherwise, the step is set to the time quantum of the current queue.
+		time_quant_by_queue = tq_arr[current_process->QLevel];
+		if( current_process->Progress + time_quant_by_queue >= current_process->Burst ){
 			
-		// Else, the step is the lesser of the queue-specific time quantum and the process's remaining burst.
-		}else{		
-			time_quant_by_queue = tq_arr[current_process->QLevel];
-			if( (time_quant_by_queue + current_process->Progress) < current_process->Burst ){
-				step = time_quant_by_queue;
+			step = current_process->Burst - current_process->Progress;
+			if( current_process->IO_Done == 0 ){
+				step = (current_process->Burst - current_process->Progress)-1;
 			}else{
 				step = current_process->Burst - current_process->Progress;
 			}
+			
+		}else{
+			step = time_quant_by_queue;
 		}
 		
+		// Increment the clock time and the current process's age by the step, set clock_step to begin iterating over
+		//the step's individual cycles.
 		clock_step = clock+1;
 		clock += step;
 		current_process->Progress += step;
@@ -122,6 +152,7 @@ void MFQS::cycle2(){
 			// While the front process's Arrival is equal to the current clock step...
 			while( vect_new_procs->size() != 0 && vect_new_procs->front()->Arrival == clock_step ){
 				temp_proc = vect_new_procs->front();
+				temp_proc->Age = clock_step;
 				//cout << "Checking new processes..." << endl; // Debug
 			
 				// Remove the process from vect_new_procs.
@@ -132,9 +163,9 @@ void MFQS::cycle2(){
 				temp_proc->QLevel = 0;
 				qv_arr[0]->push_back( temp_proc );
 				
-				cout << "C" << to_string( clock_step ) << ": Process " << to_string( temp_proc->P_ID ) << " has been submitted." << endl;
-			}
+				cout << "C" << to_string( clock_step ) << ": Process " << to_string( temp_proc->P_ID ) << " has been submitted. \n";
 			
+			}
 			
 			// Check on processes waiting for I/O.
 			// While the front process's I/O completion time is equal to the current clock step...
@@ -149,11 +180,13 @@ void MFQS::cycle2(){
 				temp_queue->pop_back();
 			
 				// Add process to the next ready queue.
-				temp_queue = qv_arr[temp_proc->QLevel];
+				temp_proc->QLevel = 0;
+				temp_queue = qv_arr[0];
 				temp_queue->push_back( temp_proc );
 				push_heap( temp_queue->begin(), temp_queue->end(), comp_proc_age );
 
-				cout << "C" << to_string( clock_step ) << ": Process " << to_string( temp_proc->P_ID ) <<" has finished its I/O and joined queue " << to_string( temp_proc->QLevel ) << "." << endl;
+				//cout << "C" << to_string( clock_step ) << ": Process " << to_string( temp_proc->P_ID ) <<" has finished its I/O and joined queue " << to_string( temp_proc->QLevel ) << ". \n";
+				cout << "C" << to_string( clock_step ) << ": Process " << to_string( temp_proc->P_ID ) <<" has finished its I/O and joined queue 0. \n";
 				
 				temp_queue = qv_arr[q_count];
 			}
@@ -179,22 +212,18 @@ void MFQS::cycle2(){
 					temp_queue->push_back( temp_proc );
 					push_heap( temp_queue->begin(), temp_queue->end(), comp_proc_age );
 
-					cout << "C" << to_string( clock_step ) << ": Process " << to_string( temp_proc->P_ID ) << " has been promoted from queue " << to_string( q_count-1 ) << " to queue " << to_string( q_count-2 ) << "." << endl;
-
+					cout << "C" << to_string( clock_step ) << ": Process " << to_string( temp_proc->P_ID ) << " has been promoted from queue " << to_string( q_count-1 ) << " to queue " << to_string( q_count-2 ) << ". \n"; 
+					
 					temp_queue = qv_arr[q_count-1];
 				}
 			}
 			
 			clock_step++;
-		}			
+		}	
 
-		// Adjust queue level of current process.
-		if( current_process->QLevel != q_count-1 ){
-			current_process->QLevel++;
-		}
-
-		// If the current process has I/O to perform..
-		if( current_process->IO_Done == 0 ){
+		// If the current process has I/O to perform and the current clock time is the universal per-process I/O point (that is, 
+		//one less than the process's total burst)
+		if( current_process->IO_Done == 0  && current_process->Burst - current_process->Progress == 1) {
 			//cout << "Moving current process to I/O queue..." << endl; // Debug
 			
 			// Add process to I/O-Wait queue ( qv_arr[q_count] ), sorting on IO completion time.
@@ -203,7 +232,8 @@ void MFQS::cycle2(){
 			temp_queue->push_back( current_process );
 			push_heap( temp_queue->begin(), temp_queue->end(), comp_proc_io_wait );
 
-			cout << "C" << to_string( clock ) << ": Process " << to_string( current_process->P_ID ) << " is now waiting for I/O." << endl;
+			cout << "C" << to_string( clock ) << ": Process " << to_string( current_process->P_ID ) << " is now waiting for I/O. \n";
+
 		
 		}else 
 		// If the current process is now complete...
@@ -212,20 +242,34 @@ void MFQS::cycle2(){
 			// Collect statistical information.
 			//+...
 
+			cout << "C" << to_string( clock ) << ": Process " << to_string( current_process->P_ID ) << " has completed. \n";
+			
+			//++procs_complete;
+			//cout << to_string( procs_complete ) << " processes complete. \n";
+			
 			// Destroy the Process object.
 			//+...
-			cout << "C" << to_string( clock ) << ": Process " << to_string( current_process->P_ID ) << " has completed." << endl;
 			delete current_process;
-		
-		//Else, the process is unfinished and is to be returned to the appropriate ready queue.
+
 		}else{
+		//Else, the process is unfinished and is to be returned to the appropriate ready queue.
 			//cout << "Queuing current process..." << endl; // Debug
-			current_process->Age = clock;
+			
+			// Adjust queue level of current process.
+			if( current_process->QLevel != q_count-1 ){
+				current_process->QLevel++;
+			}
+			
+			
+			current_process->Age = clock; // Duplicate?
+			
+			//Add the current process to the next ready queue.
 			temp_queue = qv_arr[current_process->QLevel];
 			temp_queue->push_back( current_process );
 			push_heap( temp_queue->begin(), temp_queue->end(), comp_proc_age );
 
-			cout << "C" << to_string( clock ) << ": Process " << to_string( current_process->P_ID ) << " has been moved to queue " << to_string( current_process->QLevel ) << "." << endl;
+			cout << "C" << to_string( clock ) << ": Process " << to_string( current_process->P_ID ) << " has been moved to queue " << to_string( current_process->QLevel ) << ". \n";
+			
 		}
 		
 		current_process =  nullptr;
@@ -248,9 +292,8 @@ void MFQS::cycle2(){
 			pop_heap( temp_queue->begin(), temp_queue->end(), comp_proc_age );
 			temp_queue->pop_back();
 
-		// Else, there are no immediately ready processes. 
-		
 		}else{
+			// Else, there are no immediately ready processes.
 			//cout << "Preparing wait jump..." << endl; // Debug
 			
 			// If there are no processes in the ready queues, the new process queue, or the I/O-Wait queue, then all processes
@@ -263,34 +306,43 @@ void MFQS::cycle2(){
 			// Check the new process queue and the I/O-Wait queue for processes and 
 			//select the one that will be ready soonest.
 			if( vect_new_procs->size() != 0){
+				//cout << " Set to new." << endl; // Debug
 				current_process = vect_new_procs->front();
 			}
 			if( qv_arr[q_count]->size() != 0 && (current_process == nullptr || current_process->Arrival > qv_arr[q_count]->front()->IO_Done) ){
+				//cout << " Set to I/O." << endl; // Debug
 				current_process = qv_arr[q_count]->front();
 			}
-			
+
+
 			// If the next-ready process is one that has not yet been submitted...
 			if( current_process->Arrival > clock ){
 				//cout << "Selecting from new..." << endl; // Debug
 				
 				// Set the clock to its arrival time and remove it from the new-process queue.
 				clock = current_process->Arrival;
+				current_process->Age = clock;
+				
 				pop_heap( vect_new_procs->begin(), vect_new_procs->end(), comp_proc_arrival );
 				vect_new_procs->pop_back();
 
-				cout << "C" << to_string( clock ) << ": Process " << to_string( current_process->P_ID ) << " has been submitted." << endl;
-				
+				cout << "C" << to_string( clock ) << ": Process " << to_string( current_process->P_ID ) << " has been submitted. \n";
+
+			
 			// Else, the next-ready process is currently waiting for I/O
 			}else{
 				//cout << "Selecting from I/O..." << endl; // Debug
 				
 				// Set the clock to its ready time and remove it from the I/O-Wait queue.
 				clock = current_process->IO_Done;
+				current_process->Age = clock;
+				
 				temp_queue = qv_arr[q_count];
 				pop_heap( temp_queue->begin(), temp_queue->end(), comp_proc_io_wait );
 				temp_queue->pop_back();
 
-				cout << "C" << to_string( clock ) << ": Process " << to_string( current_process->P_ID ) << " has finished its I/O and joined queue " << to_string( current_process->QLevel ) << "." << endl;
+				cout << "C" << to_string( clock ) << ": Process " << to_string( current_process->P_ID ) << " has finished its I/O and joined queue 0. \n";
+
 			}
 
 		}

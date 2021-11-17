@@ -4,7 +4,7 @@
 #include <string>
 #include <vector>
 	
-#define QUEUE_CAP_INIT 4096
+#define QUEUE_CAP_INIT 32768
 
 
 #define INPUT_EXIT "q"

@@ -16,7 +16,7 @@ using namespace std;
 
 class MFQS {
 
-	int clock;	// Tracks the total number of cycles that have passed in the simulation.
+	unsigned long clock;	// Tracks the total number of cycles that have passed in the simulation.
 	int time_quantum;	// The time quantum used for process execution, in clock cycles.
 	int io_point;	// The point in the time quantum at which to perform I/O.
 	int age_point;	// The number of cycles a process spends in the lowest-priority queue before aging up.
