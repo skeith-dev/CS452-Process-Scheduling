@@ -1,3 +1,8 @@
+
+
+
+
+
 (11/5) 
 - If we could implement a red-black tree, it would make circumstances where we need to sort processes much easier to handle. 
 	C++ has a native heap implementation; we could use that if Tan allows it. Either w, we will probably want to implement a '<' operator for the Process class.
@@ -15,19 +20,17 @@ on the final size of the Process class, this may not be prohibitive, but also no
 - The I/O-Wait queue is sorted on Process.IO, then Process.Priority, with lesser values in front.
 - The primary ready queues are sorted on Process.Arrival, then Process.Priority, with lesser values in front.
 
+(11/16)
+ - Optimization notes:
+	- Replace suffix operators (i++) with prefix operators (++i)
+	- Remove endl in cout calls, replace with newline character.
+	- Possibly move completed process object deletion out of the main loop (ensure this doesnt cause memory issues)
+	- Research runtime efficiency of Pointer->Member evaluation; see if some of these can be preloaded before cases of multiple use.
+	- May be helpful to have more than one temporary pointer for each type. Also check that using a temporary pointer is actually more effective than their respective cases of array access.
 
 
 
-	Probably two distinct phases for input preparation and main program execution. One idea for preparation phase structure:
-		
-		while there are input lines left{
-			if a line contains an invalid value{
-				discard this line;
-			else
-				create a Process object for this input line;
-			}
-		}
-		sort the resulting list of Process objects by their arrival time values.
+
 		
 		
 User prompts:

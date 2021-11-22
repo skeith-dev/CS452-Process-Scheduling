@@ -1,6 +1,7 @@
 #ifndef LAB2_CLIENT_H
 #define LAB2_CLIENT_H
-	
+
+#include <unistd.h>
 #include <string>
 #include <vector>
 	
@@ -22,7 +23,8 @@
 
 #define PROCESS_PARAM_COUNT 6
 
-	
+
+
 using namespace std;
 
 class interface_input {
@@ -46,5 +48,8 @@ int real_time();
 
 vector<Process*>* read_proc_file( bool do_io );
 vector<Process*>* read_proc_console();
+
+//vector<Process*>* read_proc_file_for_test(bool do_io );
+vector<Process*>* read_proc_file_for_test( string test_file, bool do_io );
 
 #endif

@@ -1,7 +1,13 @@
 //
 // Created by Spencer Keith on 11/3/21.
 // --
+  
+//#include <jni_md.h>
+//#include <jni.h>
 
+
+#define TEST
+#define TEST_FILE "input_100"
 #include <iostream>
 #include <fstream>
 #include <stdio.h>
@@ -9,13 +15,13 @@
 #include <algorithm>
 #include <string>
 #include <sstream>
+//#include <gtk.h>
 
 #include "MFQS.h"
 #include "RTS.h"
 #include "Client.h"
-
-
-
+#include "Process.h"
+//#include "sch_gui.h"
 
 using namespace std;
 
@@ -94,6 +100,21 @@ int main() {
 	int readmode;
 	
 	vector<Process*> *vect_new_procs;
+
+	#ifdef TEST
+	
+	queue_count = 5;
+	time_quantum = 10;
+	IO_point = 1;
+	age_point = 640;
+	vect_new_procs = read_proc_file_for_test( "input_1m", true );
+	MFQS mfqs( queue_count, time_quantum, IO_point, age_point, vect_new_procs );
+	mfqs.start();
+	return 0;
+	
+	#endif
+
+
 
 	while( get_input ){
 
@@ -311,6 +332,8 @@ int main() {
  
 }
 
+
+
 vector<Process*>* read_proc_file( bool do_io ){
 	bool need_file = true;
 	int proc_info_arr[PROCESS_PARAM_COUNT];
@@ -429,6 +452,73 @@ vector<Process*>* read_proc_console(){
 	return nullptr;
 }
 
+
+vector<Process*>* read_proc_file_for_test( string test_file, bool do_io ){
+
+	int proc_info_arr[PROCESS_PARAM_COUNT];
+	size_t pos_begin;
+	size_t pos_end;
+	string proc_info;
+	vector<Process*> *vect_new_procs;
+
+	ifstream proc_file( test_file );
+		
+		// If file was opened successfully...
+		if( proc_file.is_open() ){
+			
+			vect_new_procs = new vector<Process*>;
+			vect_new_procs->reserve( QUEUE_CAP_INIT );
+			
+			// While there are lines to be read...
+			while( getline( proc_file, proc_info ) ){
+				
+				pos_begin = proc_info.find_first_of( "1234567890" ); 
+				if( proc_info.find( "-" ) != string::npos || pos_begin == string::npos ){
+					continue;
+				}
+
+				for( int i = 0; i < 5; i++ ){
+					pos_end = proc_info.find( "\t", pos_begin );
+
+					proc_info_arr[i] = stoi( proc_info.substr( pos_begin, pos_end - pos_begin ) );
+					
+					pos_begin = proc_info.find_first_of( "1234567890", pos_end );
+				}
+				
+				proc_info_arr[5] = stoi( proc_info.substr( pos_begin ) );
+
+				// Construct Process objects.
+				Process *proc = new Process( proc_info_arr[0] );
+				proc->Burst = proc_info_arr[1];
+				proc->Arrival = proc_info_arr[2];
+				proc->Priority = proc_info_arr[3];
+				proc->Deadline = proc_info_arr[4];
+				proc->IO = proc_info_arr[5];
+				if( proc->IO == 0 || !do_io ){
+					proc->IO_Done = -1;
+				}else{
+					proc->IO_Done = 0;
+				}
+
+				insert_sorted( vect_new_procs, proc, SORT_ARRIVAL_TIME );
+			}
+			
+			// If reading stopped because of an error...
+			if( !proc_file.eof() ){
+				cout << "Error reading file." << endl;
+				delete vect_new_procs;
+				return 0;
+			}
+			
+		}else{
+			// Could not open file.
+			cout << "Failed to open file." << endl;
+		}
+	
+	cout << "Input parsed." << endl;
+	
+	return vect_new_procs;
+}
 
 
 
