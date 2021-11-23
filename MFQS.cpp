@@ -17,7 +17,7 @@
 using namespace std;
 
 
-MFQS::MFQS(int qc, int tq, int iop, int ap, vector<Process*> *vnp){
+MFQS::MFQS(int qc, int tq, int iop, int ap, vector<Process*> *vnp, Statistics *stat_tracker){
 
 	// Initialize the clock, the new-process queue, and 
 	//user-defined variables.
@@ -27,6 +27,8 @@ MFQS::MFQS(int qc, int tq, int iop, int ap, vector<Process*> *vnp){
 	io_point = iop;
 	age_point = ap;
 	vect_new_procs = vnp;
+	
+	stats = stat_tracker;
 
 	// Create the array used to hold the queue vector pointers.
 	qv_arr = new vector<Process*>*[q_count+1];
@@ -57,6 +59,8 @@ int MFQS::start(){
 	
 	current_process = vect_new_procs->front();
 	clock = current_process->Arrival;
+	stats->add_stat(current_process->P_ID,"processstart",clock);
+	cout << clock;
 	
 	pop_heap( vect_new_procs->begin(), vect_new_procs->end(), comp_proc_arrival );
 	vect_new_procs->pop_back();
@@ -149,6 +153,10 @@ void MFQS::cycle2(){
 		clock += step;
 		current_process->Progress += step;
 		current_process->Age = clock;
+		
+		
+		//STATS ADDED HERE
+		stats->add_stat(current_process->P_ID,"cputime",step);
 
 		// Iterate through the step's individual cycles.
 		while( clock_step <= clock ){
@@ -319,6 +327,10 @@ void MFQS::cycle2(){
 			
 			// Destroy the Process object.
 			//+...
+			
+			//STATS ADDED HERE
+			stats->add_stat(current_process->P_ID,"processend",clock);
+			
 			delete current_process;
 			
 
@@ -332,6 +344,8 @@ void MFQS::cycle2(){
 			#ifdef DEBUG
 			cout << "Moving current process to I/O queue..." << endl; // Debug
 			#endif
+			
+			stats->add_stat(current_process->P_ID,"iotime",current_process->IO);
 
 			// Add process to I/O-Wait queue ( qv_arr[q_count] ), sorting on IO completion time.
 			current_process->IO_Done = clock + current_process->IO;
@@ -353,6 +367,8 @@ void MFQS::cycle2(){
 			#ifdef DEBUG
 			cout << "Moving current process to I/O queue..." << endl; // Debug
 			#endif
+			
+			stats->add_stat(current_process->P_ID,"iotime",current_process->IO);
 			
 			// Add process to I/O-Wait queue ( qv_arr[q_count] ), sorting on IO completion time.
 			current_process->IO_Done = clock + current_process->IO;
@@ -487,6 +503,8 @@ void MFQS::cycle2(){
 				#ifdef PER_CLOCK_OUT
 				cout << "C" << to_string( clock ) << ": Process " << to_string( current_process->P_ID ) << " has been submitted. \n";
 				#endif
+				
+				stats->add_stat(current_process->P_ID,"processstart",clock);
 			
 			// Else, the next-ready process is currently waiting for I/O
 			}else{
@@ -507,6 +525,25 @@ void MFQS::cycle2(){
 				
 				#ifdef PER_CLOCK_OUT
 				cout << "C" << to_string( clock ) << ": Process " << to_string( current_process->P_ID ) << " has finished its I/O and joined queue 0. \n";
+				#endif
+				
+			}
+			
+			qcache_upper = 0;
+			qcache_lower = 0;
+
+		}
+	
+	}
+
+
+}
+
+
+
+
+
+s->P_ID ) << " has finished its I/O and joined queue 0. \n";
 				#endif
 				
 			}
