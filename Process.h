@@ -36,10 +36,7 @@ public:
 	Process( int p );
 	
 	bool operator < ( Process &other );
-	
-	
-	
-	
+
 };
 
 	int insert_sorted( vector<Process*> *proc_vect, Process *proc, int flag );

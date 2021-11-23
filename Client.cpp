@@ -5,9 +5,15 @@
 //#include <jni_md.h>
 //#include <jni.h>
 
+// When merging RTS with the rest of the program, it may be best to convert the input functions from using return values to setting the 
+//passed vectors. Otherwise, the entirety of the two programs could be called by a separate entry point.
+
+
 
 //#define TEST
 #define TEST_FILE "input_100"
+#define DEBUG_INPUT_ECHO
+
 #include <iostream>
 #include <fstream>
 #include <stdio.h>
@@ -68,6 +74,11 @@ int interface_input::get_line_int( int &flow_control, bool &print_menu ){
 	
 		try{
 			input_int = stoi( input_str );
+			
+			#ifdef DEBUG_INPUT_ECHO
+			cout << to_string( input_int );
+			#endif
+			
 			return input_int;
 		}catch( ... ){
 			cout << "Command not recognized." << endl;
@@ -91,33 +102,28 @@ int main() {
 	
 	int next_input = NEXT_INPUT_SCHEDULE;
 	
-	
 	int sch_alg;
 	int time_quantum;
 	int IO_point;
 	int queue_count;
 	int age_point;
 	int readmode;
-	int statsmode;
-	Statistics *stat_tracker;
 	
 	vector<Process*> *vect_new_procs;
 
 	#ifdef TEST
 	
-	queue_count = 5;
-	time_quantum = 10;
+	queue_count = 3;
+	time_quantum = 5;
 	IO_point = 1;
-	age_point = 640;
-	vect_new_procs = read_proc_file_for_test( "input_1m", true );
-	Statistics *stat_tracker;
-	stat_tracker = new Statistics();
-	MFQS mfqs( queue_count, time_quantum, IO_point, age_point, vect_new_procs, stat_tracker );
+	age_point = 40;
+	vect_new_procs = read_proc_file_for_test( "input_100", true );
+	MFQS mfqs( queue_count, time_quantum, IO_point, age_point, vect_new_procs );
 	mfqs.start();
-	stat_tracker->get_stats(); 
 	return 0;
 	
 	#endif
+
 
 
 	while( get_input ){
@@ -143,6 +149,7 @@ int main() {
 			}else
 			if( sch_alg == 2 ){
 				next_input = NEXT_INPUT_TIME;
+				IO_point = 0;
 			}else{
 				cout << "Command not recognized." << endl;
 				continue;
@@ -248,7 +255,11 @@ int main() {
 			}else{
 				cout << endl;
 				print_menu = true;
-				next_input = NEXT_INPUT_IO;
+				if( sch_alg == 1){
+					next_input = NEXT_INPUT_IO;
+				}else{
+					next_input = NEXT_INPUT_READMODE;
+				}
 			}
 			
 		}
@@ -258,8 +269,10 @@ int main() {
 			
 			//Debugcout << "{io point}" << endl; 
 			
-			interface.msg_menu[0] = "Enter the point in the time quantum at which I/O should be performed, or 0 if I/O should not be performed:";
-			interface.msg_ind_switch = 1;
+			interface.msg_menu[0] = "Choose whether or not processes should perform I/O operations, if they have any:";
+			interface.msg_menu[1] = "   1 : Yes";
+			interface.msg_menu[2] = "   2 : No";
+			interface.msg_ind_switch = 3;
 			
 			IO_point = interface.get_line_int( flow_control, print_menu );
 			
@@ -271,7 +284,20 @@ int main() {
 			if( flow_control == 2 ){
 				return 0;
 			}
-		
+			
+			if( IO_point == 2 ){
+				IO_point = 0;
+			}else
+			if( IO_point != 1 ){
+				cout << "Command not recognized." << endl;
+				continue;
+			}
+			
+			cout << endl;
+			print_menu = true;
+			next_input = NEXT_INPUT_READMODE;
+			
+			/*
 			if( IO_point > time_quantum || IO_point < 0 ){
 				cout << "The I/O point must be between 1 and the chosen time qauntum, or 0 if I/O should not be performed." << endl;
 			}else{
@@ -280,8 +306,8 @@ int main() {
 				next_input = NEXT_INPUT_READMODE;
 
 			}
+			*/
 		}
-
 
 		// Get the input mode (read from file or user input).
 		while( next_input == NEXT_INPUT_READMODE ){
@@ -289,12 +315,17 @@ int main() {
 			interface.msg_menu[0] = "Select the method for gathering process information:";
 			interface.msg_menu[1] = "   1 : Read from file";
 			interface.msg_menu[2] = "   2 : Enter process information via console";
-			interface.msg_ind_switch = 2;
+			interface.msg_ind_switch = 3;
 			
 			readmode = interface.get_line_int( flow_control, print_menu );
 			
 			if( flow_control == 1 ){
-				next_input = NEXT_INPUT_IO;
+				if( sch_alg == 1 ){
+					next_input = NEXT_INPUT_IO;
+				}else{
+					next_input = NEXT_INPUT_TIME;
+				}
+	
 				flow_control = 0;
 				break;
 			}
@@ -309,43 +340,19 @@ int main() {
 					print_menu = true;
 					continue;
 				}
+			}else
+			if( readmode == 2 ){
+				vect_new_procs = read_proc_console( nullptr, (IO_point != 0) );
+				if( vect_new_procs == nullptr ){
+					print_menu = true;
+					continue;
+				}else
+				if( vect_new_procs->size() == 0 ){
+					cout << "No process entered. Exiting..." << endl;
+					return 0;
+				}
 			}else{
 				cout << "Command not recognized." << endl;
-				continue;
-			}
-			
-		
-			next_input = NEXT_INPUT_STATISTICS;
-			
-			// Debug return 0; 
-		}
-		
-		// Get the mode of statistics tracking.
-		while( next_input == NEXT_INPUT_STATISTICS ){
-
-			interface.msg_menu[0] = "Select the method for statistics gathering:";
-			interface.msg_menu[1] = "   1 : Don't track statistics.";
-			interface.msg_menu[2] = "   2 : Track statistics.";
-			interface.msg_ind_switch = 3;
-			
-			print_menu = true;
-			statsmode = interface.get_line_int( flow_control, print_menu );
-			
-			if( flow_control == 1 ){
-				flow_control = 0;  
-			}
-			if( flow_control == 2 ){
-				return 0;
-			}
-			
-			//vector<Process*> *vect_new_procs;
-			if( statsmode == 1 ){
-				stat_tracker = NULL;
-			}
-			else if( statsmode == 2 ){
-				stat_tracker = new Statistics();
-			}else{
-				cout << "Invalid input.\n";
 				continue;
 			}
 			
@@ -355,26 +362,20 @@ int main() {
 			
 			// Debug return 0; 
 		}
-		
-		
 	
-		
-
 	}
 
 	// Build and execute the simulation.
 	if( sch_alg == 1 ){
-		MFQS mfqs( queue_count, time_quantum, IO_point, age_point, vect_new_procs, stat_tracker );
+		MFQS mfqs( queue_count, time_quantum, IO_point, age_point, vect_new_procs );
 		mfqs.start();
-		
-		if(stat_tracker != nullptr){
-			stat_tracker->get_stats();
-		}
-	}
+	}else{
+		//RTS
+		//+...
 	
+	}
 
     return 0;
- 
 }
 
 
@@ -388,6 +389,7 @@ vector<Process*>* read_proc_file( bool do_io ){
 	string fname;
 	string proc_info;
 	vector<Process*> *vect_new_procs;
+	Process *proc;
 	
 	cout << "Enter the name of the file to be read: " << endl;
 	cout << "   b : Return to input select" << endl;
@@ -429,7 +431,8 @@ vector<Process*>* read_proc_file( bool do_io ){
 				proc_info_arr[5] = stoi( proc_info.substr( pos_begin ) );
 
 				// Construct Process objects.
-				Process *proc = new Process( proc_info_arr[0] );
+				//Process *proc = new Process( proc_info_arr[0] );
+				proc = new Process( proc_info_arr[0] );
 				proc->Burst = proc_info_arr[1];
 				proc->Arrival = proc_info_arr[2];
 				proc->Priority = proc_info_arr[3];
@@ -459,40 +462,101 @@ vector<Process*>* read_proc_file( bool do_io ){
 
 	}
 	
-
-	
-	//Begin Debug
-	/*	
-	Process *p;
-	int s = vect_new_procs->size();
-	for( int i = 0; i < s; i++ ){
-		
-		p = vect_new_procs->front();
-		pop_heap( vect_new_procs->begin(), vect_new_procs->end(), comp_proc );
-		vect_new_procs->pop_back();
-		
-		cout << "Process " << i << ":" << endl;
-		cout << "  P_ID: " << p->P_ID << endl;
-		cout << "  Burst: " << p->Burst << endl;
-		cout << "  Arrival: " << p->Arrival << endl;
-		cout << "  Priority: " << p->Priority << endl;
-		cout << "  Deadline: " << p->Deadline << endl;
-		cout << "  IO: " << p->IO << endl;
-
-	}*/
-	
-	
 	cout << "Input parsed." << endl;
-	
-	//End Debug
-	
-	
-	
-	
+
 	return vect_new_procs;
 }
 
-vector<Process*>* read_proc_console(){
+vector<Process*>* read_proc_console( vector<Process*> *proc_vect_ptr, bool do_io ){
+
+	bool need_input = true;
+	bool line_complete;
+	int proc_info_arr[PROCESS_PARAM_COUNT];
+	size_t pos_begin;
+	size_t pos_end;
+	int arr_ind;
+	string proc_info;
+	vector<Process*> *vect_new_procs;
+	Process *proc;
+	
+	if( proc_vect_ptr != nullptr ){
+		vect_new_procs = proc_vect_ptr;
+	}else{
+		vect_new_procs = new vector<Process*>;
+		vect_new_procs->reserve( QUEUE_CAP_INIT );
+	}
+	
+	cout << "Enter process parameters in the following format:" << endl;
+	cout << " <ID> <Burst> <Arrival> <Priority> <Deadline> <IO>" << endl;
+	cout << "Processes with invalid parameters will be discarded." << endl;
+	cout << "   b : Return to input select" << endl;
+	cout << "   f : End process input" << endl;
+	
+	while( need_input ){
+		cout << "-> ";
+		getline( cin, proc_info );
+		if( proc_info.size() == 0 ){
+			continue;
+		}
+		
+		if( proc_info.compare( "b" ) == 0 ){
+			delete vect_new_procs;
+			return nullptr;
+		}
+		if( proc_info.compare( "f" ) == 0 ){
+			return vect_new_procs;
+		}
+	
+		pos_begin = proc_info.find_first_of( "1234567890" ); 
+		if( proc_info.find( "-" ) != string::npos || pos_begin == string::npos ){
+			continue;
+		}
+
+		for( int i = 0; i < 5; i++ ){
+			pos_end = proc_info.find( " ", pos_begin );
+			
+			
+			proc_info_arr[i] = stoi( proc_info.substr( pos_begin, pos_end - pos_begin ) );
+			
+			
+			pos_begin = proc_info.find_first_of( "1234567890", pos_end );
+		}
+
+		proc_info_arr[5] = stoi( proc_info.substr( pos_begin ) );
+		
+		// Validate info.
+		if( proc_info_arr[1] == 0 ){
+			continue;
+		}
+
+		// Construct Process objects.
+		//Process *proc = new Process( proc_info_arr[0] );
+		proc = new Process( proc_info_arr[0] );
+		proc->Burst = proc_info_arr[1];
+		proc->Arrival = proc_info_arr[2];
+		proc->Priority = proc_info_arr[3];
+		proc->Deadline = proc_info_arr[4];
+		proc->IO = proc_info_arr[5];
+		if( proc->IO == 0 || !do_io ){
+			proc->IO_Done = -1;
+		}else{
+			proc->IO_Done = 0;
+		}
+		
+		#ifdef DEBUG_INPUT_ECHO
+		cout << "Process parameters:" << endl;
+		cout << " ID: " << to_string( proc->P_ID ) << endl;
+		cout << " Burst: " << to_string( proc->Burst ) << endl;
+		cout << " Arrival: " << to_string( proc->Arrival ) << endl;
+		cout << " Priority: " << to_string( proc->Priority ) << endl;
+		cout << " Deadline: " << to_string( proc->Deadline ) << endl;
+		cout << " IO: " << to_string( proc->IO ) << endl;
+		cout << endl;
+		#endif
+		
+		insert_sorted( vect_new_procs, proc, SORT_ARRIVAL_TIME );
+
+	}
 
 	return nullptr;
 }
@@ -568,75 +632,11 @@ vector<Process*>* read_proc_file_for_test( string test_file, bool do_io ){
 
 
 int multi_feedback_queue(  ){
-	
-	
-	//	Create vector for new processes and reserve capacity.
-	//vector<Process*> *vect_new_procs = new vector<Process*>;
-	//vect_new_procs->reserve( QUEUE_CAP_INIT );
-	
-
-	
-	
-	
-	//Begin Test Data
-	/*
-	int q_count = 3;
-	int time_quantum = 2;
-	
-	Process *p1 = new Process( 1 );
-	vect_new_procs->push_back( p1 );
-	push_heap( vect_new_procs->begin(), vect_new_procs->end() );
-	
-	Process *p2 = new Process( 2 );
-	vect_new_procs->push_back( p2 );
-	push_heap( vect_new_procs->begin(), vect_new_procs->end() );
-	
-	Process *p3 = new Process( 3 );
-	vect_new_procs->push_back( p3 );
-	push_heap( vect_new_procs->begin(), vect_new_procs->end() );
-	
-	Process *p4 = new Process( 4 );
-	vect_new_procs->push_back( p4 );
-	push_heap( vect_new_procs->begin(), vect_new_procs->end() );
-	
-	Process *p5 = new Process( 5 );
-	vect_new_procs->push_back( p5 );
-	push_heap( vect_new_procs->begin(), vect_new_procs->end() );
-	
-	Process *p6 = new Process( 6 );
-	vect_new_procs->push_back( p6 );
-	push_heap( vect_new_procs->begin(), vect_new_procs->end() );
-	
-	Process *p7 = new Process( 7 );
-	vect_new_procs->push_back( p7 );
-	push_heap( vect_new_procs->begin(), vect_new_procs->end() );
-	
-	Process *p8 = new Process( 8 );
-	vect_new_procs->push_back( p8 );
-	push_heap( vect_new_procs->begin(), vect_new_procs->end() );
-	
-	Process *p9 = new Process( 9 );
-	vect_new_procs->push_back( p9 );
-	push_heap( vect_new_procs->begin(), vect_new_procs->end() );
-	
-	Process *p10 = new Process( 10 );
-	vect_new_procs->push_back( p10 );
-	push_heap( vect_new_procs->begin(), vect_new_procs->end() );
-	*/
-	//End Test Data
-	
-	
-	
-	//MFQS *mfqs = new MFQS( q_count, time_quantum, vect_new_procs );
-	
-
 	return 0;
 }
 
 
 int real_time( ){
-
-
 	return 0;
 }
 

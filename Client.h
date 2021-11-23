@@ -20,7 +20,6 @@
 #define NEXT_INPUT_MFQS_QUEUES 6
 
 #define NEXT_INPUT_PROCESS 7
-#define NEXT_INPUT_STATISTICS 8
 
 #define PROCESS_PARAM_COUNT 6
 
@@ -48,7 +47,7 @@ int multi_feedback_queue();
 int real_time();
 
 vector<Process*>* read_proc_file( bool do_io );
-vector<Process*>* read_proc_console();
+vector<Process*>* read_proc_console( vector<Process*> *proc_vect_ptr = nullptr, bool do_io = false );
 
 //vector<Process*>* read_proc_file_for_test(bool do_io );
 vector<Process*>* read_proc_file_for_test( string test_file, bool do_io );
