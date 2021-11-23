@@ -2,6 +2,10 @@
 // Created by Kevin Emery on 11/21/21.
 //
 
+#ifndef LAB2_STATISTICS_H
+#define LAB2_STATISTICS_H
+
+
 #include <cmath>
 #include <vector>
 #include <iostream>
@@ -16,11 +20,11 @@ using namespace std;
 
 class statistic {
 	public:
-		int program;
+		long int program;
 		string type;
-		int value;
-		statistic(int, string, int);
-		void setValues(int, string, int);
+		long int value;
+		statistic(long int, string, long int);
+		void setValues(long int, string, long int);
 };
 
 class Statistics {
@@ -30,6 +34,7 @@ class Statistics {
 	public:
 		Statistics();
 		void get_stats();
-		void add_stat(int program, string type, int value);
+		void add_stat(long int program, string type, long int value);
 
 };
+#endif

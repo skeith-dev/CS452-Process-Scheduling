@@ -12,7 +12,7 @@
 
 //#define TEST
 #define TEST_FILE "input_100"
-#define DEBUG_INPUT_ECHO
+//#define DEBUG_INPUT_ECHO
 
 #include <iostream>
 #include <fstream>
@@ -27,6 +27,7 @@
 #include "RTS.h"
 #include "Client.h"
 #include "Process.h"
+#include "Statistics.h"
 //#include "sch_gui.h"
 
 using namespace std;
@@ -108,20 +109,22 @@ int main() {
 	int queue_count;
 	int age_point;
 	int readmode;
+	int statsmode;
+	Statistics *stat_tracker;
 	
 	vector<Process*> *vect_new_procs;
 
 	#ifdef TEST
-	
 	queue_count = 3;
-	time_quantum = 5;
+	time_quantum = 4;
 	IO_point = 1;
 	age_point = 40;
 	vect_new_procs = read_proc_file_for_test( "input_100", true );
-	MFQS mfqs( queue_count, time_quantum, IO_point, age_point, vect_new_procs );
+	stat_tracker = new Statistics();
+	MFQS mfqs( queue_count, time_quantum, IO_point, age_point, vect_new_procs, stat_tracker );
 	mfqs.start();
+	stat_tracker->get_stats(); 
 	return 0;
-	
 	#endif
 
 
@@ -355,30 +358,65 @@ int main() {
 				cout << "Command not recognized." << endl;
 				continue;
 			}
+
+			next_input = NEXT_INPUT_STATISTICS;
 			
-		
+		}
+	
+		// Get the mode of statistics tracking.
+		while( next_input == NEXT_INPUT_STATISTICS ){
+
+			interface.msg_menu[0] = "Select the method for statistics gathering:";
+			interface.msg_menu[1] = "   1 : Don't track statistics.";
+			interface.msg_menu[2] = "   2 : Track statistics.";
+			interface.msg_ind_switch = 3;
+			
+			print_menu = true;
+			statsmode = interface.get_line_int( flow_control, print_menu );
+			
+			if( flow_control == 1 ){
+				NEXT_INPUT_READMODE;
+				flow_control = 0;
+				break; 
+			}
+			if( flow_control == 2 ){
+				return 0;
+			}
+			
+			//vector<Process*> *vect_new_procs;
+			if( statsmode == 1 ){
+				stat_tracker = nullptr;
+			}
+			else if( statsmode == 2 ){
+				stat_tracker = new Statistics();
+			}else{
+				cout << "Invalid input.\n";
+				continue;
+			}
+
 			next_input = 0;
 			get_input = false; 
-			
-			// Debug return 0; 
+
 		}
+	
 	
 	}
 
 	// Build and execute the simulation.
 	if( sch_alg == 1 ){
-		MFQS mfqs( queue_count, time_quantum, IO_point, age_point, vect_new_procs );
+		MFQS mfqs( queue_count, time_quantum, IO_point, age_point, vect_new_procs, stat_tracker );
 		mfqs.start();
+		
+		if(stat_tracker != nullptr){
+			stat_tracker->get_stats();
+		}
 	}else{
 		//RTS
 		//+...
-	
 	}
 
     return 0;
 }
-
-
 
 vector<Process*>* read_proc_file( bool do_io ){
 	bool need_file = true;
@@ -561,7 +599,6 @@ vector<Process*>* read_proc_console( vector<Process*> *proc_vect_ptr, bool do_io
 	return nullptr;
 }
 
-
 vector<Process*>* read_proc_file_for_test( string test_file, bool do_io ){
 
 	int proc_info_arr[PROCESS_PARAM_COUNT];
@@ -627,16 +664,5 @@ vector<Process*>* read_proc_file_for_test( string test_file, bool do_io ){
 	cout << "Input parsed." << endl;
 	
 	return vect_new_procs;
-}
-
-
-
-int multi_feedback_queue(  ){
-	return 0;
-}
-
-
-int real_time( ){
-	return 0;
 }
 

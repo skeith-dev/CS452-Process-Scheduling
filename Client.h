@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <string>
 #include <vector>
+#include "Statistics.h"
 	
 #define QUEUE_CAP_INIT 32768
 
@@ -20,6 +21,7 @@
 #define NEXT_INPUT_MFQS_QUEUES 6
 
 #define NEXT_INPUT_PROCESS 7
+#define NEXT_INPUT_STATISTICS 8
 
 #define PROCESS_PARAM_COUNT 6
 
@@ -41,10 +43,6 @@ public:
 	interface_input();
 	int get_line_int( int &flow_control, bool &print_menu );
 };
-
-
-int multi_feedback_queue();
-int real_time();
 
 vector<Process*>* read_proc_file( bool do_io );
 vector<Process*>* read_proc_console( vector<Process*> *proc_vect_ptr = nullptr, bool do_io = false );

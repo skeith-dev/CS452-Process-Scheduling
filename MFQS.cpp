@@ -9,15 +9,16 @@
 #include <algorithm>
 
 //#define DEBUG 
-#define PER_CLOCK_OUT 
+#define DEBUG_SUMMARY
 
+//#define PER_CLOCK_OUT 
 
 #include "MFQS.h"
 
 using namespace std;
 
 
-MFQS::MFQS(int qc, int tq, int iop, int ap, vector<Process*> *vnp){
+MFQS::MFQS(int qc, int tq, int iop, int ap, vector<Process*> *vnp, Statistics *stat_tracker){
 
 	// Initialize the clock, the new-process queue, and 
 	//user-defined variables.
@@ -27,11 +28,17 @@ MFQS::MFQS(int qc, int tq, int iop, int ap, vector<Process*> *vnp){
 	io_point = iop;
 	age_point = ap;
 	vect_new_procs = vnp;
+	
+	if( stat_tracker == nullptr ){
+		do_stats = false;
+	}else{
+		do_stats = true;
+		stats = stat_tracker;
+	}
 
 	// Create the array used to hold the queue vector pointers.
 	qv_arr = new vector<Process*>*[q_count+1];
 	tq_arr = new int[q_count];
-	
 	
 	// Create the queue vectors.
 	for( int i = 0; i <= q_count; i++ ){
@@ -39,7 +46,6 @@ MFQS::MFQS(int qc, int tq, int iop, int ap, vector<Process*> *vnp){
 		qv_arr[i]->reserve( vect_new_procs->capacity() );	
 		tq_arr[i] = time_quantum * pow( 2, i ); 
 	}
-
 
 }
 
@@ -57,6 +63,10 @@ int MFQS::start(){
 	
 	current_process = vect_new_procs->front();
 	clock = current_process->Arrival;
+	
+	if( do_stats ){
+		stats->add_stat(current_process->P_ID,"processstart",(long int) clock);
+	}
 	
 	pop_heap( vect_new_procs->begin(), vect_new_procs->end(), comp_proc_arrival );
 	vect_new_procs->pop_back();
@@ -90,7 +100,10 @@ void MFQS::cycle2(){
 	int time_quant_by_queue; // The time quanta for a specific queue.
 	int q_ind;	// Used when finding the next available process in a ready queue.
 	int clock_step; // Used when iterating through the individual cycles of a step.
-	//int procs_complete = 0;
+	
+	#ifdef DEBUG_SUMMARY
+	int procs_complete = 0;
+	#endif
 	
 	//bool IO_flag = false;
 	bool req_flag = false;
@@ -99,13 +112,13 @@ void MFQS::cycle2(){
 	int max_queue = q_count-1;
 	
 	int qcache_upper = 0; // Index of the ready queue the current process was taken from.
-	int qcache_lower = 0; // Index of the ready queue the current process was added to, if applicable.
+	//int qcache_lower = 0; // Index of the ready queue the current process was added to, if applicable.
 
 	Process *temp_proc; // A temporary Process pointer.
 	vector<Process*> *temp_queue; // A temporary vector<Process*> pointer.
 
 	//int loop_counter = 0;
-	string input_str;
+	//string input_str;
 	//while( current_process != nullptr ){
 	while( true ){
 		
@@ -146,7 +159,11 @@ void MFQS::cycle2(){
 		clock += step;
 		current_process->Progress += step;
 		current_process->Age = clock;
-
+		
+		if( do_stats ){
+			stats->add_stat(current_process->P_ID,"cputime",(long int) step);
+		}
+		
 		// Iterate through the step's individual cycles.
 		while( clock_step <= clock ){
 
@@ -157,9 +174,14 @@ void MFQS::cycle2(){
 				//This is where a process enters the system and begins waiting.
 
 				qcache_upper = 0;
+				//qcache_lower = 0;
 
 				temp_proc = vect_new_procs->front();
 				temp_proc->Age = clock_step;
+				
+				if( do_stats ){
+					stats->add_stat(temp_proc->P_ID,"processstart",(long int) clock);
+				}
 				
 				#ifdef DEBUG
 				cout << "Checking new processes..." << endl; // Debug
@@ -187,12 +209,12 @@ void MFQS::cycle2(){
 				//Statistics:
 				//This is where a process finishes waiting for I/O. It must be noted that the process is still waiting at this time.
 
-
 				#ifdef DEBUG
 				cout << "Checking I/O..." << endl; // Debug
 				#endif
 
 				qcache_upper = 0;
+				//qcache_lower = 0;
 
 				temp_proc = temp_queue->front();
 				temp_proc->Age = clock_step;
@@ -227,6 +249,7 @@ void MFQS::cycle2(){
 					#endif
 
 					qcache_upper = 0;
+					//qcache_lower = 0;
 					
 					temp_proc = temp_queue->front();
 					temp_proc->Age = clock_step;
@@ -250,16 +273,12 @@ void MFQS::cycle2(){
 			}
 			
 			clock_step++;
-
 		}	
 
-
-		
 		if( req_flag ){
 			//Statistics:
 			//This is where an unfinished process is added to the appropriate ready queue (i.e., it is no longer executing and begins waiting again).
-			
-			
+		
 			#ifdef DEBUG
 			cout << "Queuing current process..." << endl; // Debug
 			#endif
@@ -269,7 +288,7 @@ void MFQS::cycle2(){
 			// Adjust queue level of current process.
 			if( current_process->QLevel != max_queue ){
 				current_process->QLevel++;
-				qcache_lower = current_process->QLevel;
+				//qcache_lower = current_process->QLevel;
 			}
 
 			//Add the current process to the next ready queue.
@@ -300,7 +319,6 @@ void MFQS::cycle2(){
 			//The time a process begins waiting for I/O should be: current_process->IO_Done - current_process->IO
 			//The time a process finishes waiting for I/O should be current_process->IO_Done
 			
-			
 			#ifdef DEBUG
 			cout << "Finishing current process..." << endl; // Debug
 			#endif
@@ -311,11 +329,17 @@ void MFQS::cycle2(){
 			cout << "C" << to_string( clock ) << ": Process " << to_string( current_process->P_ID ) << " has completed. \n";
 			#endif
 			
-			//++procs_complete;
+			#ifdef DEBUG_SUMMARY
+			++procs_complete;
+			#endif
+			
 			//cout << to_string( procs_complete ) << " processes complete. \n";
 			
+			if( do_stats ){
+				stats->add_stat(current_process->P_ID,"processend",(long int) clock);
+			}
+			
 			// Destroy the Process object.
-			//+...
 			delete current_process;
 			
 
@@ -329,7 +353,11 @@ void MFQS::cycle2(){
 			#ifdef DEBUG
 			cout << "Moving current process to I/O queue..." << endl; // Debug
 			#endif
-
+			
+			if( do_stats ){
+				stats->add_stat(current_process->P_ID,"iotime",(long int) current_process->IO);
+			}
+			
 			// Add process to I/O-Wait queue ( qv_arr[q_count] ), sorting on IO completion time.
 			current_process->IO_Done = clock + current_process->IO;
 			temp_queue = qv_arr[q_count];
@@ -347,7 +375,10 @@ void MFQS::cycle2(){
 		// If the queue that the current process was taken from is not empty, select the front process of that queue for execution.
 		//Statistics:
 		//This is where the next ready process is selected for execution and is no longer waiting.
+		
+		/*
 		if( qv_arr[qcache_upper]->size() != 0 ){
+			//qcache_lower = qcache_upper;
 			temp_queue = qv_arr[qcache_upper];
 			current_process = temp_queue->front();
 			pop_heap( temp_queue->begin(), temp_queue->end(), comp_proc_age );
@@ -358,6 +389,21 @@ void MFQS::cycle2(){
 		if( qv_arr[qcache_lower]->size() != 0 ){
 			qcache_upper = qcache_lower;
 			temp_queue = qv_arr[qcache_lower];
+			current_process = temp_queue->front();
+			pop_heap( temp_queue->begin(), temp_queue->end(), comp_proc_age );
+			temp_queue->pop_back();
+		*/
+	
+		
+		if( qv_arr[qcache_upper]->size() == 0 ){
+			qcache_upper = 0;
+			while( qv_arr[qcache_upper]->size() == 0 && qcache_upper < q_count ){
+				qcache_upper++;
+			}
+		}
+		
+		if( qcache_upper < q_count ){
+			temp_queue = qv_arr[qcache_upper];
 			current_process = temp_queue->front();
 			pop_heap( temp_queue->begin(), temp_queue->end(), comp_proc_age );
 			temp_queue->pop_back();
@@ -372,9 +418,16 @@ void MFQS::cycle2(){
 			// If there are no processes in the ready queues, the new process queue, or the I/O-Wait queue, then all processes
 			//are finished and the simulation is complete.
 			if( vect_new_procs->size() == 0 && qv_arr[q_count]->size() == 0 ){
-				cout << "Simulation complete." << endl;
 				
-				//cout << to_string( procs_complete ) << endl;
+				#ifdef DEBUG_SUMMARY
+				cout << "vect_new_procs: " << to_string( vect_new_procs->size() ) << endl;
+				for( int i = 0; i <=q_count; i++ ){
+					cout << "qv_arr[" << to_string( i ) << "]: " << to_string( qv_arr[i]->size() ) << endl;
+				}
+				cout << to_string( procs_complete ) << endl;
+				#endif
+				
+				cout << "Simulation complete." << endl;
 				
 				return;
 			}
@@ -415,6 +468,9 @@ void MFQS::cycle2(){
 				#ifdef PER_CLOCK_OUT
 				cout << "C" << to_string( clock ) << ": Process " << to_string( current_process->P_ID ) << " has been submitted. \n";
 				#endif
+				if( do_stats ){
+					stats->add_stat(current_process->P_ID,"processstart",(long int) clock);
+				}
 			
 			// Else, the next-ready process is currently waiting for I/O
 			}else{
@@ -440,12 +496,11 @@ void MFQS::cycle2(){
 			}
 			
 			qcache_upper = 0;
-			qcache_lower = 0;
+			//qcache_lower = 0;
 
 		}
 	
 	}
-
 
 }
 
