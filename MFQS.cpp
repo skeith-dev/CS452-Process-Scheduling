@@ -543,22 +543,3 @@ void MFQS::cycle2(){
 
 
 
-s->P_ID ) << " has finished its I/O and joined queue 0. \n";
-				#endif
-				
-			}
-			
-			qcache_upper = 0;
-			qcache_lower = 0;
-
-		}
-	
-	}
-
-
-}
-
-
-
-
-
