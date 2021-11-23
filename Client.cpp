@@ -6,7 +6,7 @@
 //#include <jni.h>
 
 
-#define TEST
+//#define TEST
 #define TEST_FILE "input_100"
 #include <iostream>
 #include <fstream>
@@ -98,6 +98,8 @@ int main() {
 	int queue_count;
 	int age_point;
 	int readmode;
+	int statsmode;
+	Statistics *stat_tracker;
 	
 	vector<Process*> *vect_new_procs;
 
@@ -108,12 +110,14 @@ int main() {
 	IO_point = 1;
 	age_point = 640;
 	vect_new_procs = read_proc_file_for_test( "input_1m", true );
-	MFQS mfqs( queue_count, time_quantum, IO_point, age_point, vect_new_procs );
+	Statistics *stat_tracker;
+	stat_tracker = new Statistics();
+	MFQS mfqs( queue_count, time_quantum, IO_point, age_point, vect_new_procs, stat_tracker );
 	mfqs.start();
+	stat_tracker->get_stats(); 
 	return 0;
 	
 	#endif
-
 
 
 	while( get_input ){
@@ -311,11 +315,48 @@ int main() {
 			}
 			
 		
+			next_input = NEXT_INPUT_STATISTICS;
+			
+			// Debug return 0; 
+		}
+		
+		// Get the mode of statistics tracking.
+		while( next_input == NEXT_INPUT_STATISTICS ){
+
+			interface.msg_menu[0] = "Select the method for statistics gathering:";
+			interface.msg_menu[1] = "   1 : Don't track statistics.";
+			interface.msg_menu[2] = "   2 : Track statistics.";
+			interface.msg_ind_switch = 3;
+			
+			print_menu = true;
+			statsmode = interface.get_line_int( flow_control, print_menu );
+			
+			if( flow_control == 1 ){
+				flow_control = 0;  
+			}
+			if( flow_control == 2 ){
+				return 0;
+			}
+			
+			//vector<Process*> *vect_new_procs;
+			if( statsmode == 1 ){
+				stat_tracker = NULL;
+			}
+			else if( statsmode == 2 ){
+				stat_tracker = new Statistics();
+			}else{
+				cout << "Invalid input.\n";
+				continue;
+			}
+			
+		
 			next_input = 0;
 			get_input = false; 
 			
 			// Debug return 0; 
 		}
+		
+		
 	
 		
 
@@ -323,8 +364,12 @@ int main() {
 
 	// Build and execute the simulation.
 	if( sch_alg == 1 ){
-		MFQS mfqs( queue_count, time_quantum, IO_point, age_point, vect_new_procs );
+		MFQS mfqs( queue_count, time_quantum, IO_point, age_point, vect_new_procs, stat_tracker );
 		mfqs.start();
+		
+		if(stat_tracker != nullptr){
+			stat_tracker->get_stats();
+		}
 	}
 	
 
