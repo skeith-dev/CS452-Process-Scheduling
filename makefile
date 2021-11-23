@@ -1,7 +1,7 @@
 
  
-Lab2: Client.o MFQS.o RTS.o Process.o 
-	g++ -o Lab2 Client.o MFQS.o RTS.o Process.o 
+Lab2: Client.o MFQS.o RTS.o Process.o Statistics.o
+	g++ -o Lab2 Client.o MFQS.o RTS.o Process.o Statistics.o
 	
 	
 Client.o: Client.cpp Client.h MFQS.h RTS.h
@@ -17,7 +17,8 @@ RTS.o: RTS.cpp RTS.h
 Process.o: Process.cpp Process.h
 	g++ -c Process.cpp
 	
-
+Statistics.o: Statistics.cpp Statistics.h
+	g++ -c Statistics.cpp
 
 clean:
 	rm *.o Lab2
