@@ -59,6 +59,7 @@ A: 5.552
 #include <vector>
 
 #include "Process.h"
+#include "Statistics.h"
 
 using namespace std;
 
@@ -74,9 +75,9 @@ class MFQS {
 	int q_count;	// The number of process queues.
 	int **q_arr;	// A pointer to an array that stores the process queues. Its total size is equal to q_count+1. q_arr[q_count] stores processes suspended for I/O.
 	int *tq_arr;	// A pointer to an array that stores the pre-calculated time quanta for each queue. 
-	int time_quantum_max;
+	int time_quantum_max; 
 	//string *os_arr;	// A point to an array of strings used for output.
-
+	Statistics *stats;
 	Process *current_process;	// The process currently in the processor.
 
 	vector<Process*> *vect_new_procs;
@@ -85,7 +86,7 @@ class MFQS {
 
 public:
     MFQS();
-	MFQS( int qc, int tq, int iop, int ap, vector<Process*> *vnp );
+	MFQS( int qc, int tq, int iop, int ap, vector<Process*> *vnp, Statistics *stat_tracker);
 	
 	// Main method of the class.
 	int start();
