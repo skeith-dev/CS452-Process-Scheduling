@@ -44,10 +44,10 @@ public:
 	int get_line_int( int &flow_control, bool &print_menu );
 };
 
-vector<Process*>* read_proc_file( bool do_io );
-vector<Process*>* read_proc_console( vector<Process*> *proc_vect_ptr = nullptr, bool do_io = false );
+vector<Process*>* read_proc_file( bool do_io, int sch_alg );
+//vector<Process*>* read_proc_console( vector<Process*> *proc_vect_ptr = nullptr, bool do_io = false );
+vector<Process*>* read_proc_console( bool do_io, int sch_alg );
 
-//vector<Process*>* read_proc_file_for_test(bool do_io );
-vector<Process*>* read_proc_file_for_test( string test_file, bool do_io );
+vector<Process*>* read_proc_file_for_test( string test_file, bool do_io, int sch_alg );
 
 #endif

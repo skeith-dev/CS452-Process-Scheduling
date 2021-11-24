@@ -10,7 +10,8 @@
 
 
 
-//#define TEST
+//#define TEST_MFQS
+//#define TEST_RTS
 #define TEST_FILE "input_100"
 //#define DEBUG_INPUT_ECHO
 
@@ -100,6 +101,7 @@ int main() {
 	
 	bool get_input = true;
 	bool print_menu = true;
+	bool rts_hard;
 	
 	int next_input = NEXT_INPUT_SCHEDULE;
 	
@@ -114,16 +116,25 @@ int main() {
 	
 	vector<Process*> *vect_new_procs;
 
-	#ifdef TEST
+	#ifdef TEST_MFQS
 	queue_count = 3;
-	time_quantum = 4;
+	time_quantum = 5;
 	IO_point = 1;
 	age_point = 40;
-	vect_new_procs = read_proc_file_for_test( "input_100", true );
+	vect_new_procs = read_proc_file_for_test( "input_100", true, 1 );
 	stat_tracker = new Statistics();
 	MFQS mfqs( queue_count, time_quantum, IO_point, age_point, vect_new_procs, stat_tracker );
 	mfqs.start();
 	stat_tracker->get_stats(); 
+	return 0;
+	#endif
+
+	#ifdef TEST_RTS
+	stat_tracker = new Statistics();
+	vect_new_procs = read_proc_file_for_test( "input_1k", false, 2 );
+	RTS *rts = new RTS( &vect_new_procs, false, stat_tracker);
+	rts->start();
+	stat_tracker->get_stats();
 	return 0;
 	#endif
 
@@ -133,13 +144,12 @@ int main() {
 
 		// Get the scheduling algorithm to be simulated.
 		while( next_input == NEXT_INPUT_SCHEDULE ){
-			
-			//Debugcout << "{schedule}" << endl; 
-			
+
 			interface.msg_menu[0] = "Select the scheduling algorithm to simulate:";
 			interface.msg_menu[1] = "   1 : Multi-Feedback Queue";
-			interface.msg_menu[2] = "   2 : Real-Time";
-			interface.msg_ind_switch = 3;
+			interface.msg_menu[2] = "   2 : Soft Real-Time";
+			interface.msg_menu[3] = "   3 : Hard Real-Time";
+			interface.msg_ind_switch = 4;
 			
 			sch_alg = interface.get_line_int( flow_control, print_menu );
 			
@@ -150,14 +160,15 @@ int main() {
 			if( sch_alg == 1 ){
 				next_input = NEXT_INPUT_MFQS_QUEUES;
 			}else
-			if( sch_alg == 2 ){
+			if( sch_alg < 4){
 				next_input = NEXT_INPUT_TIME;
 				IO_point = 0;
+				rts_hard = (sch_alg == 3 );
 			}else{
 				cout << "Command not recognized." << endl;
 				continue;
 			}
-			
+
 			cout << endl;
 			print_menu = true;
 			flow_control = 0;
@@ -165,9 +176,7 @@ int main() {
 		
 		// If MFQS, get the number of queues.
 		while( next_input == NEXT_INPUT_MFQS_QUEUES ){
-			
-			//Debugcout << "{queues}" << endl; 
-			
+
 			interface.msg_menu[0] = "Enter the number of queues for the MFQS simulation:";
 			interface.msg_ind_switch = 1;
 		
@@ -198,9 +207,7 @@ int main() {
 		
 		// If MFQS and more than 1 queue, get the lowest-priority age-up threshold.
 		while( next_input == NEXT_INPUT_MFQS_AGE && queue_count > 1 ){
-			
-			//Debugcout << "{age}" << endl; 
-			
+
 			interface.msg_menu[0] = "Enter the time in the lowest queue after which a process should age up:";
 			interface.msg_ind_switch = 1;
 			
@@ -227,9 +234,7 @@ int main() {
 		
 		// Get the time quantum to be used.
 		while( next_input == NEXT_INPUT_TIME ){
-			
-			//Debugcout << "{time quantum}" << endl; 
-			
+
 			interface.msg_menu[0] = "Enter the time quantum to be used:";
 			interface.msg_ind_switch = 1;
 			
@@ -269,9 +274,7 @@ int main() {
 		
 		// Get the point in the time quantum at which I/O should be performed.		
 		while( next_input == NEXT_INPUT_IO ){
-			
-			//Debugcout << "{io point}" << endl; 
-			
+
 			interface.msg_menu[0] = "Choose whether or not processes should perform I/O operations, if they have any:";
 			interface.msg_menu[1] = "   1 : Yes";
 			interface.msg_menu[2] = "   2 : No";
@@ -338,14 +341,14 @@ int main() {
 			
 			//vector<Process*> *vect_new_procs;
 			if( readmode == 1 ){
-				vect_new_procs = read_proc_file( (IO_point != 0) );
+				vect_new_procs = read_proc_file( (IO_point != 0), sch_alg );
 				if( vect_new_procs == nullptr ){
 					print_menu = true;
 					continue;
 				}
 			}else
 			if( readmode == 2 ){
-				vect_new_procs = read_proc_console( nullptr, (IO_point != 0) );
+				vect_new_procs = read_proc_console( (IO_point != 0), sch_alg );
 				if( vect_new_procs == nullptr ){
 					print_menu = true;
 					continue;
@@ -407,18 +410,23 @@ int main() {
 		MFQS mfqs( queue_count, time_quantum, IO_point, age_point, vect_new_procs, stat_tracker );
 		mfqs.start();
 		
-		if(stat_tracker != nullptr){
+		if( stat_tracker != nullptr ){
 			stat_tracker->get_stats();
 		}
 	}else{
-		//RTS
-		//+...
+		RTS *rts = new RTS( &vect_new_procs, false, stat_tracker);
+		rts->start();
+		
+		if( stat_tracker != nullptr ){
+			stat_tracker->get_stats();
+		}
+
 	}
 
     return 0;
 }
 
-vector<Process*>* read_proc_file( bool do_io ){
+vector<Process*>* read_proc_file( bool do_io, int sch_alg ){
 	bool need_file = true;
 	int proc_info_arr[PROCESS_PARAM_COUNT];
 	size_t pos_begin;
@@ -470,19 +478,27 @@ vector<Process*>* read_proc_file( bool do_io ){
 
 				// Construct Process objects.
 				//Process *proc = new Process( proc_info_arr[0] );
-				proc = new Process( proc_info_arr[0] );
-				proc->Burst = proc_info_arr[1];
-				proc->Arrival = proc_info_arr[2];
-				proc->Priority = proc_info_arr[3];
-				proc->Deadline = proc_info_arr[4];
-				proc->IO = proc_info_arr[5];
+				
+				Process *proc = new Process( proc_info_arr[0], 
+											 proc_info_arr[1],
+											 proc_info_arr[2],
+											 proc_info_arr[3],
+											 proc_info_arr[4],
+											 proc_info_arr[5] );
 				if( proc->IO == 0 || !do_io ){
-					proc->IO_Done = -1;
+					proc->io_done = -1;
 				}else{
-					proc->IO_Done = 0;
+					proc->io_done = 0;
 				}
 
-				insert_sorted( vect_new_procs, proc, SORT_ARRIVAL_TIME );
+				//insert_sorted_1( vect_new_procs, proc, SORT_ARRIVAL_TIME );
+				
+				if( sch_alg == 1 ){
+					insert_sorted_1( vect_new_procs, proc, SORT_ARRIVAL_TIME );
+				}else{
+					insert_sorted( vect_new_procs, proc, SORT_ARRIVAL_TIME );
+				}
+				
 			}
 			
 			// If reading stopped because of an error...
@@ -505,7 +521,7 @@ vector<Process*>* read_proc_file( bool do_io ){
 	return vect_new_procs;
 }
 
-vector<Process*>* read_proc_console( vector<Process*> *proc_vect_ptr, bool do_io ){
+vector<Process*>* read_proc_console( bool do_io, int sch_alg ){
 
 	bool need_input = true;
 	bool line_complete;
@@ -514,18 +530,21 @@ vector<Process*>* read_proc_console( vector<Process*> *proc_vect_ptr, bool do_io
 	size_t pos_end;
 	int arr_ind;
 	string proc_info;
-	vector<Process*> *vect_new_procs;
+	vector<Process*> *vect_new_procs = new vector<Process*>;
+	vect_new_procs->reserve( QUEUE_CAP_INIT );
 	Process *proc;
-	
+
+	/*
 	if( proc_vect_ptr != nullptr ){
 		vect_new_procs = proc_vect_ptr;
 	}else{
 		vect_new_procs = new vector<Process*>;
 		vect_new_procs->reserve( QUEUE_CAP_INIT );
 	}
+	*/
 	
 	cout << "Enter process parameters in the following format:" << endl;
-	cout << " <ID> <Burst> <Arrival> <Priority> <Deadline> <IO>" << endl;
+	cout << " <ID> <burst> <arrival> <priority> <deadline> <IO>" << endl;
 	cout << "Processes with invalid parameters will be discarded." << endl;
 	cout << "   b : Return to input select" << endl;
 	cout << "   f : End process input" << endl;
@@ -558,6 +577,12 @@ vector<Process*>* read_proc_console( vector<Process*> *proc_vect_ptr, bool do_io
 			
 			
 			pos_begin = proc_info.find_first_of( "1234567890", pos_end );
+			if( pos_begin == string::npos ){
+				break;
+			}		
+		}
+		if( pos_begin == string::npos ){
+			continue;
 		}
 
 		proc_info_arr[5] = stoi( proc_info.substr( pos_begin ) );
@@ -568,38 +593,40 @@ vector<Process*>* read_proc_console( vector<Process*> *proc_vect_ptr, bool do_io
 		}
 
 		// Construct Process objects.
-		//Process *proc = new Process( proc_info_arr[0] );
-		proc = new Process( proc_info_arr[0] );
-		proc->Burst = proc_info_arr[1];
-		proc->Arrival = proc_info_arr[2];
-		proc->Priority = proc_info_arr[3];
-		proc->Deadline = proc_info_arr[4];
-		proc->IO = proc_info_arr[5];
-		if( proc->IO == 0 || !do_io ){
-			proc->IO_Done = -1;
-		}else{
-			proc->IO_Done = 0;
-		}
-		
+		Process *proc = new Process( proc_info_arr[0], 
+											 proc_info_arr[1],
+											 proc_info_arr[2],
+											 proc_info_arr[3],
+											 proc_info_arr[4],
+											 proc_info_arr[5] );
+				if( proc->IO == 0 || !do_io ){
+					proc->io_done = -1;
+				}else{
+					proc->io_done = 0;
+				}
+
 		#ifdef DEBUG_INPUT_ECHO
 		cout << "Process parameters:" << endl;
-		cout << " ID: " << to_string( proc->P_ID ) << endl;
-		cout << " Burst: " << to_string( proc->Burst ) << endl;
-		cout << " Arrival: " << to_string( proc->Arrival ) << endl;
-		cout << " Priority: " << to_string( proc->Priority ) << endl;
-		cout << " Deadline: " << to_string( proc->Deadline ) << endl;
+		cout << " ID: " << to_string( proc->process_ID ) << endl;
+		cout << " burst: " << to_string( proc->burst ) << endl;
+		cout << " arrival: " << to_string( proc->arrival ) << endl;
+		cout << " priority: " << to_string( proc->priority ) << endl;
+		cout << " deadline: " << to_string( proc->deadline ) << endl;
 		cout << " IO: " << to_string( proc->IO ) << endl;
 		cout << endl;
 		#endif
 		
-		insert_sorted( vect_new_procs, proc, SORT_ARRIVAL_TIME );
-
+		if( sch_alg == 1 ){
+			insert_sorted_1( vect_new_procs, proc, SORT_ARRIVAL_TIME );
+		}else{
+			insert_sorted( vect_new_procs, proc, SORT_ARRIVAL_TIME );
+		}
 	}
 
 	return nullptr;
 }
 
-vector<Process*>* read_proc_file_for_test( string test_file, bool do_io ){
+vector<Process*>* read_proc_file_for_test( string test_file, bool do_io, int sch_alg ){
 
 	int proc_info_arr[PROCESS_PARAM_COUNT];
 	size_t pos_begin;
@@ -634,19 +661,24 @@ vector<Process*>* read_proc_file_for_test( string test_file, bool do_io ){
 				proc_info_arr[5] = stoi( proc_info.substr( pos_begin ) );
 
 				// Construct Process objects.
-				Process *proc = new Process( proc_info_arr[0] );
-				proc->Burst = proc_info_arr[1];
-				proc->Arrival = proc_info_arr[2];
-				proc->Priority = proc_info_arr[3];
-				proc->Deadline = proc_info_arr[4];
-				proc->IO = proc_info_arr[5];
+				Process *proc = new Process( proc_info_arr[0], 
+											 proc_info_arr[1],
+											 proc_info_arr[2],
+											 proc_info_arr[3],
+											 proc_info_arr[4],
+											 proc_info_arr[5] );
 				if( proc->IO == 0 || !do_io ){
-					proc->IO_Done = -1;
+					proc->io_done = -1;
 				}else{
-					proc->IO_Done = 0;
+					proc->io_done = 0;
 				}
-
-				insert_sorted( vect_new_procs, proc, SORT_ARRIVAL_TIME );
+				
+				if( sch_alg == 1 ){
+					insert_sorted_1( vect_new_procs, proc, SORT_ARRIVAL_TIME );
+				}else{
+					insert_sorted( vect_new_procs, proc, SORT_ARRIVAL_TIME );
+				}
+				
 			}
 			
 			// If reading stopped because of an error...

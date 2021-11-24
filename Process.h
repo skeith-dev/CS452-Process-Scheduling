@@ -10,43 +10,42 @@
 #define SORT_ARRIVAL_TIME 0 
 #define SORT_IO_WAIT 1 
 #define SORT_AGE 3
-#define SORT_DEADLINE 2
-
+#define SORT_DEADLINE_TIME 2
 
 using namespace std;
 
 class Process{
+
 public:
 	
-	int P_ID;	// ID of the process.
-	int Burst;	// Total processor time needed by the process.
-	int Progress;	// Current processor time used by the process.
-	int Arrival;	// Arrival time, measured in clock cycles.
-	int Priority;	// Process priority.
-	int Deadline;	// Process deadline, in clock cycles.
+	int process_ID;	// ID of the process.
+	int burst;	// Total processor time needed by the process.	
+	int arrival;	// Arrival time, measured in clock cycles.
+	int priority;	// Process priority.
+	int deadline;	// Process deadline, in clock cycles.
 	int IO;		// Time needed for I/O, in clock cycles.
-	int Age;	// Age of the process in clock cycles; used when measuring time spent waiting.
-	int QLevel;	// Specifies which queue a process is in.
-	int IO_Done;	// Is initially 0 if the process has an I/O operation it has not performed, or -1 if it has no I/O. 
-	int Sort_Type;
 	
-	//string P_ID_str;
-	
+	int progress;	// Current processor time used by the process.
+	int age;	// Age of the process in clock cycles; used when measuring time spent waiting.
+	int qlevel;	// Specifies which queue a process is in.
+	int io_done;	// Is initially 0 if the process has an I/O operation it has not performed, or -1 if it has no I/O. 
+
 	Process();
-	Process( int p );
-	
-	bool operator < ( Process &other );
+	Process(int processID, int arrival, int burst, int deadline);
+	Process( int processID, int burst, int arrival, int priority, int deadline, int IO );
+
 
 };
 
-	int insert_sorted( vector<Process*> *proc_vect, Process *proc, int flag );
+int insert_sorted_1( vector<Process*> *proc_vect, Process *proc, int flag );
+void insert_sorted( vector<Process*> *process_vector, Process *process, int flag );
 
-	bool comp_proc( Process *proc_1, Process *proc2 );
+bool comp_proc_arrival( Process *proc_1, Process *proc2 );
+bool comp_proc_io_wait( Process *proc_1, Process *proc2 );
+bool comp_proc_age( Process *proc_1, Process *proc2 );
 	
-	bool comp_proc_arrival( Process *proc_1, Process *proc2 );
-	bool comp_proc_io_wait( Process *proc_1, Process *proc2 );
-	bool comp_proc_age( Process *proc_1, Process *proc2 );
-	
+bool compare_process_arrival( Process *proc_1, Process *proc_2 );
+bool compare_process_deadline( Process *proc_1, Process *proc_2);
 
 #endif
 
